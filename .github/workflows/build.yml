@@ -1,4 +1,4 @@
-name: Build ImmortalWrt 24.10.x 
+name: Build ImmortalWrt 24.10.x
 
 on:
   workflow_dispatch:
@@ -14,9 +14,12 @@ on:
   schedule:
     - cron: '0 2 * * 1'
 
-# 添加权限
 permissions:
   contents: write
+
+env:
+  BUILD_VERSION: ${{ github.event.inputs.version || '24.10.6' }}
+  ROM_SIZE: ${{ github.event.inputs.rom_size || '512' }}
 
 jobs:
   build:
@@ -31,9 +34,6 @@ jobs:
           chmod 777 output
 
       - name: Build firmware
-        env:
-          BUILD_VERSION: ${{ github.event.inputs.version || '24.10.6' }}
-          ROM_SIZE: ${{ github.event.inputs.rom_size || '512' }}
         run: |
           docker run --rm -i \
             -v "${{ github.workspace }}:/home/build/custom" \
@@ -50,8 +50,12 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.BUILD_VERSION }}-${{ github.run_id }}
+          # 强制添加 'v' 前缀，确保 Tag 格式合法，且避免以数字或特殊符号开头
+          tag_name: v${{ env.BUILD_VERSION }}-${{ github.run_id }}
           name: ImmortalWrt ${{ env.BUILD_VERSION }} Build
+          body: |
+            ImmortalWrt ${{ env.BUILD_VERSION }} 自动构建版本。
+            构建编号: ${{ github.run_id }}
           files: output/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
