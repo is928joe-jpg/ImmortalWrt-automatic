@@ -8,11 +8,11 @@ echo "========================================="
 # 加载配置
 source /home/build/custom/shell/custom-packages.sh
 
-# 应用 imm.config（不输出内容）
+# 应用 imm.config（替换而非追加，避免冲突）
 if [ -f "/home/build/custom/$TARGET_ARCH/imm.config" ]; then
-    cat /home/build/custom/$TARGET_ARCH/imm.config >> /home/build/immortalwrt/.config 2>/dev/null
+    cat /home/build/custom/$TARGET_ARCH/imm.config > /home/build/immortalwrt/.config
 elif [ -f "/home/build/custom/files/imm.config" ]; then
-    cat /home/build/custom/files/imm.config >> /home/build/immortalwrt/.config 2>/dev/null
+    cat /home/build/custom/files/imm.config > /home/build/immortalwrt/.config
 fi
 
 # 进入构建目录
@@ -46,7 +46,7 @@ fi
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
     echo ""
     echo "❌ 构建失败:"
-    grep -iE "error|failed|cannot find|not found" /tmp/build.log | tail -5
+    grep -iE "error|failed|cannot find|not found|Missing" /tmp/build.log | tail -5
     exit 1
 fi
 
