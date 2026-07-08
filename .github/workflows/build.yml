@@ -11,10 +11,6 @@ on:
         description: "ImmortalWrt 版本 (例如: 24.10.6)"
         required: true
         default: '24.10.6'
-      image_types:
-        description: "镜像类型（多选用逗号分隔，留空=全部）\n可选: combined-efi-ext4, combined-efi-squashfs, combined-ext4, combined-squashfs, rootfs-ext4, rootfs-squashfs, rootfs-targz, iso-efi, iso"
-        required: false
-        default: 'combined-efi-ext4,combined-efi-squashfs'
   schedule:
     - cron: '0 2 * * 1'
 
@@ -29,12 +25,10 @@ jobs:
         env:
           BUILD_VERSION: ${{ github.event.inputs.version || '24.10.6' }}
           ROM_SIZE: ${{ github.event.inputs.rom_size || '512' }}
-          IMAGE_TYPES: ${{ github.event.inputs.image_types }}
         run: |
           docker run --rm -i \
             -v "${{ github.workspace }}:/home/build/custom" \
             -e PROFILE=$ROM_SIZE \
-            -e IMAGE_TYPES="$IMAGE_TYPES" \
             immortalwrt/imagebuilder:x86-64-openwrt-$BUILD_VERSION \
             /bin/bash /home/build/custom/x86-64/build24.sh
 
