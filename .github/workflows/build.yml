@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Build firmware
         run: |
@@ -47,7 +47,6 @@ jobs:
             -e SUBTARGET="$SUBTARGET" \
             -e ROM_SIZE="${{ github.event.inputs.rom_size }}" \
             -e VERSION="${{ github.event.inputs.version }}" \
-            -e TARGET_ARCH="${{ github.event.inputs.target_arch }}" \
             immortalwrt/imagebuilder:${IMAGE}-openwrt-${{ github.event.inputs.version }} \
             /bin/bash /home/build/custom/x86-64/build24.sh
 
