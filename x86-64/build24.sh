@@ -1,8 +1,8 @@
 #!/bin/bash
+set -e
 
 source /home/build/custom/ImmortalWrt/shell/custom-packages.sh
 
-# ImageBuilder 默认构建目录
 cd /home/build/openwrt || {
     echo "❌ ImageBuilder 构建目录不存在"
     exit 1
@@ -23,15 +23,7 @@ make image \
   FILES="/home/build/custom/ImmortalWrt/files" \
   ROOTFS_PARTSIZE=$ROM_SIZE
 
-if [ $? -eq 0 ]; then
-    echo "✅ 构建成功"
-
-    mkdir -p /home/build/custom/output
-    cp -rv /home/build/openwrt/bin/targets/$TARGET/$SUBTARGET/* /home/build/custom/output/
-
-    chmod -R 755 /home/build/custom/output
-    ls -lh /home/build/custom/output/
-else
-    echo "❌ 构建失败"
-    exit 1
-fi
+mkdir -p /home/build/custom/output
+cp -rv /home/build/openwrt/bin/targets/$TARGET/$SUBTARGET/* /home/build/custom/output/
+chmod -R 755 /home/build/custom/output
+ls -lh /home/build/custom/output/
