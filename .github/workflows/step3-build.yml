@@ -40,33 +40,33 @@ jobs:
       - name: Build firmware
         run: |
           ARCH="${{ github.event.inputs.target_arch }}"
+          DEVICE="${{ github.event.inputs.device }}"
           VERSION="${{ github.event.inputs.version }}"
           IMAGE="${ARCH}-openwrt-${VERSION}"
-          
-          case $ARCH in
-            x86-64)
-              TARGET="x86"
-              SUBTARGET="64"
-              ;;
-            rockchip-armv8)
-              TARGET="rockchip"
-              SUBTARGET="armv8"
-              ;;
-            mediatek-filogic)
-              TARGET="mediatek"
-              SUBTARGET="filogic"
-              ;;
-            *)
-              TARGET=$(echo $ARCH | cut -d- -f1)
-              SUBTARGET=$(echo $ARCH | cut -d- -f2- | sed 's/-/\//g')
+
+          # 解析 TARGET/SUBTARGET
+          case "$ARCH" in
+            x86-64)            TARGET="x86";    SUBTARGET="64" ;;
+            x86-generic)       TARGET="x86";    SUBTARGET="generic" ;;
+            x86-legacy)        TARGET="x86";    SUBTARGET="legacy" ;;
+            x86-geode)         TARGET="x86";    SUBTARGET="geode" ;;
+            *) 
+              TARGET="${ARCH%%-*}"
+              SUBTARGET="${ARCH#*-}"
               ;;
           esac
+
+          if [ "$DEVICE" = "generic" ]; then
+            PROFILE=""
+          else
+            PROFILE="PROFILE=\"$DEVICE\""
+          fi
 
           docker run --rm -i \
             -v "${{ github.workspace }}:/home/build/custom" \
             -e TARGET="$TARGET" \
             -e SUBTARGET="$SUBTARGET" \
-            -e PROFILE="PROFILE=\"${{ github.event.inputs.device }}\"" \
+            -e PROFILE="$PROFILE" \
             -e ROM_SIZE="${{ github.event.inputs.rom_size }}" \
             immortalwrt/imagebuilder:$IMAGE \
             /bin/bash /home/build/custom/build24.sh
@@ -82,16 +82,15 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Firmware-${{ github.event.inputs.target_arch }}-${{ github.event.inputs.device }}
+          name: ${{ github.event.inputs.target_arch }}-${{ github.event.inputs.device }}-${{ github.event.inputs.version }}
           path: output/*
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.version }}-${{ github.run_id }}
-          name: ImmortalWrt ${{ github.event.inputs.version }} - ${{ github.event.inputs.device }}
+          name: ImmortalWrt ${{ github.event.inputs.version }} - ${{ github.event.inputs.target_arch }}/${{ github.event.inputs.device }}
           body: |
-            ## 构建信息
             - 版本: ${{ github.event.inputs.version }}
             - 架构: ${{ github.event.inputs.target_arch }}
             - 设备: ${{ github.event.inputs.device }}

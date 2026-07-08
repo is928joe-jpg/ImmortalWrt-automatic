@@ -7,51 +7,13 @@ on:
         description: "ImmortalWrt 版本"
         required: true
         type: string
-      
-          - apm821xx-nand
-          - apm821xx-sata
-          - armsr-armv7
-          - armsr-armv8
-          - at91-sam9x
-          - at91-sama5
-          - at91-sama7
-          - ath79-generic
-          - ath79-mikrotik
-          - ath79-nand
-          - bcm27xx-bcm2708
-          - bcm27xx-bcm2709
-          - bcm27xx-bcm2710
-          - bcm27xx-bcm2711
-          - bcm27xx-bcm2712
-          - bcm47xx-generic
-          - bcm47xx-legacy
-          - bcm47xx-mips74k
-          - bcm4908-generic
-          - bcm53xx-generic
-          - bmips-bcm6318
-          - bmips-bcm63268
-          - bmips-bcm6328
-          - bmips-bcm6358
-          - bmips-bcm6362
-          - bmips-bcm6368
-          - d1-generic
-          - gemini-generic
-          - imx-cortexa53
-          - imx-cortexa7
-          - imx-cortexa9
-          - ipq40xx-chromium
-          - ipq40xx-generic
-          - ipq40xx-mikrotik
-          - ipq806x-chromium
-          - ipq806x-generic
-          - ixp4xx-generic
-          - kirkwood-generic
-          - lantiq-ase
-          - lantiq-xrx200
-          - lantiq-xrx200_legacy
-          - lantiq-xway
-          - lantiq-xway_legacy
-  # 由 step1 自动填充
+        default: ''
+      target_arch:
+        description: "选择目标架构"
+        required: true
+        type: choice
+        options:
+
 
 permissions:
   contents: write
@@ -63,6 +25,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.PAT }}
 
       - name: 获取设备列表
         run: |
@@ -70,38 +34,39 @@ jobs:
           VERSION="${{ github.event.inputs.version }}"
           IMAGE="${ARCH}-openwrt-${VERSION}"
           
-          echo "🍞 获取 $ARCH 的设备列表..."
-          PROFILES=$(docker run --rm immortalwrt/imagebuilder:$IMAGE \
-            make info 2>/dev/null | grep -oP '^\s*\K[^\s:]+(?=:)' | grep -v "Current\|Default\|Available\|Target\|Architecture\|Revision\|Packages" | sort -u)
-          
-          echo "$PROFILES" > /tmp/devices.txt
-          echo "可用设备:"
-          cat /tmp/devices.txt
+          echo "🍞 获取设备..."
+          docker run --rm immortalwrt/imagebuilder:$IMAGE \
+            make info 2>/dev/null | grep -oP '^\s*\K[^\s:]+(?=:)' | \
+            grep -v "Current\|Default\|Available\|Target\|Architecture\|Revision\|Packages" | sort -u | tee /tmp/devices.txt
 
       - name: 更新 step3-build.yml
         run: |
-          chmod +x .github/workflows/update-options.sh
-          .github/workflows/update-options.sh step3-build.yml device $(cat /tmp/devices.txt | tr '\n' ' ')
+          DEVICES=$(cat /tmp/devices.txt | tr '\n' ' ')
+          [ -z "$DEVICES" ] && DEVICES="generic"
+          
+          python3 << 'EOF'
+import re
 
-      - name: 提交更新
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add .github/workflows/step3-build.yml
-          git diff --staged --quiet || git commit -m "Auto: device list for ${{ github.event.inputs.target_arch }}"
-          git push
+with open('.github/workflows/step3-build.yml', 'r') as f:
+    content = f.read()
 
-      - name: 触发 Step 3
-        uses: actions/github-script@v7
+options = ""
+for d in """$DEVICES""".split():
+    options += f"          - {d}\n"
+
+content = re.sub(
+    r'(device:.*?options:)\s*\n(.*?)(\n      [a-z])',
+    '\\1\n' + options + '\\3',
+    content,
+    flags=re.DOTALL
+)
+
+with open('.github/workflows/step3-build.yml', 'w') as f:
+    f.write(content)
+EOF
+
+      - name: 提交
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'step3-build.yml',
-              ref: 'main',
-              inputs: {
-                version: '${{ github.event.inputs.version }}',
-                target_arch: '${{ github.event.inputs.target_arch }}'
-              }
-            });
+          commit_message: "Auto: devices for ${{ github.event.inputs.target_arch }}"
+          file_pattern: '.github/workflows/step3-build.yml'
