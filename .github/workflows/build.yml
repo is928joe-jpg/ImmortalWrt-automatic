@@ -36,7 +36,7 @@ jobs:
       - name: 准备输出目录
         run: |
           mkdir -p output
-          # 不修改权限，让 GitHub Actions 自行处理
+          # 不修改权限，避免容器内的权限问题
 
       - name: Build firmware
         run: |
@@ -46,14 +46,7 @@ jobs:
             mediatek-filogic) TARGET="mediatek"; SUBTARGET="filogic"; IMAGE="mediatek-filogic" ;;
           esac
 
-          # 先运行容器查看镜像的用户信息
-          docker run --rm \
-            immortalwrt/imagebuilder:${IMAGE}-openwrt-${{ github.event.inputs.version }} \
-            /bin/bash -c "id; echo 'HOME:'; ls -la /home"
-
-          # 构建固件（使用 --user 参数匹配容器内的用户）
-          docker run --rm \
-            -u $(id -u):$(id -g) \
+          docker run --rm -i \
             -v "${{ github.workspace }}:/home/build/custom" \
             -e TARGET="$TARGET" \
             -e SUBTARGET="$SUBTARGET" \
