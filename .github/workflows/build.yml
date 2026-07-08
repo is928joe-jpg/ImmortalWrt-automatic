@@ -7,14 +7,15 @@ on:
         description: "ImmortalWrt 版本"
         required: true
         default: '24.10.6'
-      target:
-        description: "CPU 架构 (例如: x86, rockchip, mediatek)"
+      target_arch:
+        description: "选择目标架构"
         required: true
-        default: 'x86'
-      subtarget:
-        description: "子架构 (例如: 64, armv8, filogic)"
-        required: true
-        default: '64'
+        type: choice
+        options:
+          - x86-64
+          - rockchip-armv8
+          - mediatek-filogic
+          - broadcom-bcm27xx
       rom_size:
         description: "固件大小(MB)"
         required: true
@@ -29,17 +30,15 @@ jobs:
 
       - name: Build firmware
         run: |
+          # 拆分选择的架构为 Target 和 Subtarget
+          # 例如 x86-64 -> TARGET=x86, SUBTARGET=64
+          IFS='-' read -r TARGET SUBTARGET <<< "${{ github.event.inputs.target_arch }}"
+          
           docker run --rm -i \
             -v "${{ github.workspace }}:/home/build/custom" \
-            -e TARGET=${{ github.event.inputs.target }} \
-            -e SUBTARGET=${{ github.event.inputs.subtarget }} \
+            -e TARGET=$TARGET \
+            -e SUBTARGET=$SUBTARGET \
             -e PROFILE=$ROM_SIZE \
             -e VERSION=${{ github.event.inputs.version }} \
-            immortalwrt/imagebuilder:${{ github.event.inputs.target }}-${{ github.event.inputs.subtarget }}-openwrt-${{ github.event.inputs.version }} \
+            immortalwrt/imagebuilder:${TARGET}-${SUBTARGET}-openwrt-${{ github.event.inputs.version }} \
             /bin/bash /home/build/custom/scripts/build.sh
-
-      - name: Upload firmware
-        uses: actions/upload-artifact@v4
-        with:
-          name: ImmortalWrt-${{ github.event.inputs.target }}
-          path: output/*
