@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   get-archs:
@@ -21,11 +22,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: 调试 Docker Hub API
+      - name: 获取架构列表
         run: |
-          echo "=== 直接 curl ==="
-          curl -sv "https://hub.docker.com/v2/repositories/immortalwrt/imagebuilder/tags?page_size=5" 2>&1 | head -50
-          
-          echo "=== 带 token ==="
+          VERSION="${{ github.event.inputs.version }}"
           TOKEN=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:immortalwrt/imagebuilder:pull" | jq -r '.token')
-          curl -sH "Authorization: Bearer $TOKEN" "https://registry-1.docker.io/v2/immortalwrt/imagebuilder/tags/list" | jq .
+          
+          curl -sH "Authorization: Bearer $TOKEN" \
+            "https://registry-1.docker.io/v2/immortalwrt/imagebuilder/tags/list?n=1000" | \
+            jq -r '.tags[]' | grep "openwrt-${VERSION}" | sed "s/-openwrt-${VERSION}//" | sort -u | head -20
