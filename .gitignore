@@ -1,1 +1,18 @@
 commit.sh
+# 生成脚本（本地用）
+generate-options.sh
+
+# 临时文件
+/tmp/
+*.tmp
+*.swp
+*~
+
+# 构建输出
+output/
+bin/
+build_dir/
+
+# Python 缓存
+__pycache__/
+*.pyc

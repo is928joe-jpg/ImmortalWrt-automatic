@@ -1,4 +1,4 @@
-name: "Step 3: 选择设备并构建"
+name: Build ImmortalWrt
 
 on:
   workflow_dispatch:
@@ -6,16 +6,38 @@ on:
       version:
         description: "ImmortalWrt 版本"
         required: true
-        type: string
-      target_arch:
-        description: "目标架构"
-        required: true
-        type: string
-      device:
-        description: "选择设备"
+        type: choice
+        options:
+          - 24.10.6
+          - 24.10.5
+      target:
+        description: "目标架构/设备"
         required: true
         type: choice
-        options: []  # 由 step2 自动填充
+        options:
+          - apm821xx-nand/generic
+          - apm821xx-sata/generic
+          - armsr-armv7/generic
+          - armsr-armv8/generic
+          - at91-sam9x/generic
+          - at91-sama5/generic
+          - at91-sama7/generic
+          - ath79-generic/generic
+          - ath79-mikrotik/generic
+          - ath79-nand/generic
+          - bcm27xx-bcm2708/generic
+          - bcm27xx-bcm2709/generic
+          - bcm27xx-bcm2710/generic
+          - bcm27xx-bcm2711/generic
+          - bcm27xx-bcm2712/generic
+          - bcm47xx-generic/generic
+          - bcm47xx-legacy/generic
+          - bcm47xx-mips74k/generic
+          - bcm4908-generic/generic
+          - bcm53xx-generic/generic
+          - mediatek-filogic/xiaomi_ax6000
+          - rockchip-armv8/friendlyarm_nanopi-r4s
+          - x86-64/generic
       rom_size:
         description: "固件大小(MB)"
         required: true
@@ -39,18 +61,18 @@ jobs:
 
       - name: Build firmware
         run: |
-          ARCH="${{ github.event.inputs.target_arch }}"
-          DEVICE="${{ github.event.inputs.device }}"
+          TARGET_INPUT="${{ github.event.inputs.target }}"
+          ARCH="${TARGET_INPUT%%/*}"
+          DEVICE="${TARGET_INPUT##*/}"
           VERSION="${{ github.event.inputs.version }}"
           IMAGE="${ARCH}-openwrt-${VERSION}"
 
-          # 解析 TARGET/SUBTARGET
           case "$ARCH" in
-            x86-64)            TARGET="x86";    SUBTARGET="64" ;;
-            x86-generic)       TARGET="x86";    SUBTARGET="generic" ;;
-            x86-legacy)        TARGET="x86";    SUBTARGET="legacy" ;;
-            x86-geode)         TARGET="x86";    SUBTARGET="geode" ;;
-            *) 
+            x86-64)      TARGET="x86";    SUBTARGET="64" ;;
+            x86-generic) TARGET="x86";    SUBTARGET="generic" ;;
+            x86-legacy)  TARGET="x86";    SUBTARGET="legacy" ;;
+            x86-geode)   TARGET="x86";    SUBTARGET="geode" ;;
+            *)
               TARGET="${ARCH%%-*}"
               SUBTARGET="${ARCH#*-}"
               ;;
@@ -82,18 +104,17 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.inputs.target_arch }}-${{ github.event.inputs.device }}-${{ github.event.inputs.version }}
+          name: ${{ github.event.inputs.target }}-${{ github.event.inputs.version }}
           path: output/*
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.version }}-${{ github.run_id }}
-          name: ImmortalWrt ${{ github.event.inputs.version }} - ${{ github.event.inputs.target_arch }}/${{ github.event.inputs.device }}
+          name: ImmortalWrt ${{ github.event.inputs.version }} - ${{ github.event.inputs.target }}
           body: |
             - 版本: ${{ github.event.inputs.version }}
-            - 架构: ${{ github.event.inputs.target_arch }}
-            - 设备: ${{ github.event.inputs.device }}
+            - 目标: ${{ github.event.inputs.target }}
             - 固件大小: ${{ github.event.inputs.rom_size }} MB
           files: output/*
         env:
