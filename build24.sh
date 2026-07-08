@@ -6,22 +6,25 @@ echo "🍞 构建: $TARGET_ARCH | ${ROM_SIZE}MB"
 source /home/build/custom/shell/custom-packages.sh
 cd /home/build/immortalwrt
 
-# 选择 Profile
 if [ -n "$DEVICE" ]; then
     PROFILE="PROFILE=\"$DEVICE\""
-    echo "🍞 使用指定设备: $DEVICE"
+    echo "🍞 指定设备: $DEVICE"
 elif [ "$TARGET_ARCH" = "x86-64" ]; then
     PROFILE=""
-    echo "🍞 x86-64 使用默认配置"
+    echo "🍞 x86-64 默认配置"
 else
     echo "🍞 自动检测设备..."
-    PROFILE_NAME=$(make info 2>/dev/null | sed -n '/^[a-zA-Z0-9_-]\+:$/p' | head -1 | sed 's/:$//')
+    INFO=$(make info 2>/dev/null)
+    echo "$INFO"
+    echo "---"
+    # 提取 Available Profiles 之后第一个非空非标题行
+    PROFILE_NAME=$(echo "$INFO" | sed -n '/Available Profiles/,$p' | grep -v "Available Profiles\|Current\|Default\|^\s*$" | head -1 | awk '{print $1}' | sed 's/:$//')
     if [ -n "$PROFILE_NAME" ]; then
         PROFILE="PROFILE=\"$PROFILE_NAME\""
-        echo "🍞 自动选择: $PROFILE_NAME"
+        echo "🍞 选择: $PROFILE_NAME"
     else
         PROFILE=""
-        echo "🍞 未检测到设备，使用默认"
+        echo "🍞 未检测到，使用默认"
     fi
 fi
 
@@ -33,8 +36,8 @@ else
 fi
 
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
-    echo "❌ 构建失败:"
-    grep -iE "error|failed|not found|Missing" /tmp/build.log | tail -5
+    echo "❌ 失败:"
+    grep -iE "error|failed|not found|does not exist" /tmp/build.log | tail -5
     exit 1
 fi
 
