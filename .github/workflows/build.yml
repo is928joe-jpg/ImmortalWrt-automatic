@@ -10,21 +10,18 @@ on:
         options:
           - 24.10.6
           - 24.10.5
-      target_arch:
-        description: "选择目标架构"
+      target:
+        description: "选择目标设备"
         required: true
         type: choice
         options:
-          - x86-64
-          - rockchip-armv8
-          - mediatek-filogic
-      device:
-        description: "设备 Profile（留空自动选择第一个）"
-        required: false
-        default: ''
+          - x86-64 (generic)
+          - rockchip-armv8 / friendlyarm_nanopi-r4s
+          - mediatek-filogic / xiaomi_ax6000
       rom_size:
         description: "固件大小(MB)"
         required: true
+        type: string
         default: '512'
 
 permissions:
@@ -44,19 +41,33 @@ jobs:
 
       - name: Build firmware
         run: |
-          case "${{ github.event.inputs.target_arch }}" in
-            x86-64) TARGET="x86"; SUBTARGET="64"; IMAGE="x86-64" ;;
-            rockchip-armv8) TARGET="rockchip"; SUBTARGET="armv8"; IMAGE="rockchip-armv8" ;;
-            mediatek-filogic) TARGET="mediatek"; SUBTARGET="filogic"; IMAGE="mediatek-filogic" ;;
+          case "${{ github.event.inputs.target }}" in
+            "x86-64 (generic)")
+              TARGET="x86"
+              SUBTARGET="64"
+              IMAGE="x86-64"
+              PROFILE=""
+              ;;
+            "rockchip-armv8 / friendlyarm_nanopi-r4s")
+              TARGET="rockchip"
+              SUBTARGET="armv8"
+              IMAGE="rockchip-armv8"
+              PROFILE='PROFILE="friendlyarm_nanopi-r4s"'
+              ;;
+            "mediatek-filogic / xiaomi_ax6000")
+              TARGET="mediatek"
+              SUBTARGET="filogic"
+              IMAGE="mediatek-filogic"
+              PROFILE='PROFILE="xiaomi_ax6000"'
+              ;;
           esac
 
           docker run --rm -i \
             -v "${{ github.workspace }}:/home/build/custom" \
             -e TARGET="$TARGET" \
             -e SUBTARGET="$SUBTARGET" \
+            -e PROFILE="$PROFILE" \
             -e ROM_SIZE="${{ github.event.inputs.rom_size }}" \
-            -e TARGET_ARCH="${{ github.event.inputs.target_arch }}" \
-            -e DEVICE="${{ github.event.inputs.device }}" \
             immortalwrt/imagebuilder:${IMAGE}-openwrt-${{ github.event.inputs.version }} \
             /bin/bash /home/build/custom/build24.sh
 
@@ -71,19 +82,18 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Firmware-${{ github.event.inputs.target_arch }}-${{ github.event.inputs.version }}
+          name: Firmware-${{ github.event.inputs.target }}-${{ github.event.inputs.version }}
           path: output/*
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.version }}-${{ github.event.inputs.target_arch }}-${{ github.run_id }}
-          name: ImmortalWrt ${{ github.event.inputs.version }} - ${{ github.event.inputs.target_arch }}
+          tag_name: ${{ github.event.inputs.version }}-${{ github.run_id }}
+          name: ImmortalWrt ${{ github.event.inputs.version }} - ${{ github.event.inputs.target }}
           body: |
             ## 构建信息
             - 版本: ${{ github.event.inputs.version }}
-            - 架构: ${{ github.event.inputs.target_arch }}
-            - 设备: ${{ github.event.inputs.device || '自动' }}
+            - 设备: ${{ github.event.inputs.target }}
             - 固件大小: ${{ github.event.inputs.rom_size }} MB
             - 构建编号: ${{ github.run_id }}
           files: output/*
