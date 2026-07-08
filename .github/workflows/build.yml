@@ -6,7 +6,7 @@ on:
       rom_size:
         description: "固件大小(MB)"
         required: true
-        default: '1024'
+        default: '512'
       version:
         description: "ImmortalWrt 版本 (例如: 24.10.6)"
         required: true
