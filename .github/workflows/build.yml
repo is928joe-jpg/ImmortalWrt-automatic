@@ -54,7 +54,7 @@ jobs:
             -e VERSION="${{ github.event.inputs.version }}" \
             -e TARGET_ARCH="${{ github.event.inputs.target_arch }}" \
             immortalwrt/imagebuilder:${IMAGE}-openwrt-${{ github.event.inputs.version }} \
-            /bin/bash /home/build/custom/ImmortalWrt/x86-64/build24.sh
+            /bin/bash /home/build/custom/ImmortalWrt/${{ github.event.inputs.target_arch }}/build24.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
