@@ -47,20 +47,20 @@ jobs:
           esac
 
           docker run --rm -i \
-            -v "${{ github.workspace }}/ImmortalWrt:/home/build/custom" \
+            -v "${{ github.workspace }}:/home/build/custom" \
             -e TARGET="$TARGET" \
             -e SUBTARGET="$SUBTARGET" \
             -e ROM_SIZE="${{ github.event.inputs.rom_size }}" \
             -e VERSION="${{ github.event.inputs.version }}" \
             -e TARGET_ARCH="${{ github.event.inputs.target_arch }}" \
             immortalwrt/imagebuilder:${IMAGE}-openwrt-${{ github.event.inputs.version }} \
-            /bin/bash /home/build/custom/x86-64/build24.sh
+            /bin/bash /home/build/custom/ImmortalWrt/x86-64/build24.sh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: Firmware-${{ github.event.inputs.target_arch }}-${{ github.event.inputs.version }}
-          path: ImmortalWrt/output/*
+          path: output/*
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -73,6 +73,6 @@ jobs:
             - 架构: ${{ github.event.inputs.target_arch }}
             - 固件大小: ${{ github.event.inputs.rom_size }} MB
             - 构建编号: ${{ github.run_id }}
-          files: ImmortalWrt/output/*
+          files: output/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
