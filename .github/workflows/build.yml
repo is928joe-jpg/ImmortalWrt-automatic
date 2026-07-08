@@ -36,7 +36,9 @@ jobs:
       - name: 准备输出目录
         run: |
           mkdir -p output
-          # 不修改权限，避免容器内的权限问题
+          chmod 777 output
+          echo "Output directory permissions:"
+          ls -ld output
 
       - name: Build firmware
         run: |
@@ -47,6 +49,7 @@ jobs:
           esac
 
           docker run --rm -i \
+            --user $(id -u):$(id -g) \
             -v "${{ github.workspace }}:/home/build/custom" \
             -e TARGET="$TARGET" \
             -e SUBTARGET="$SUBTARGET" \
