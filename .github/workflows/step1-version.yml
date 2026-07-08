@@ -21,11 +21,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: 获取所有架构
+      - name: 调试 Docker Hub API
         run: |
-          VERSION="${{ github.event.inputs.version }}"
-          echo "🍞 获取版本 $VERSION 的可用架构..."
-
-          curl -s "https://hub.docker.com/v2/repositories/immortalwrt/imagebuilder/tags?page_size=100" | \
-            jq -r '.results[].name' | grep "openwrt-${VERSION}" | sed "s/-openwrt-${VERSION}//" | sort -u
-        continue-on-error: true
+          echo "=== 直接 curl ==="
+          curl -sv "https://hub.docker.com/v2/repositories/immortalwrt/imagebuilder/tags?page_size=5" 2>&1 | head -50
+          
+          echo "=== 带 token ==="
+          TOKEN=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:immortalwrt/imagebuilder:pull" | jq -r '.token')
+          curl -sH "Authorization: Bearer $TOKEN" "https://registry-1.docker.io/v2/immortalwrt/imagebuilder/tags/list" | jq .
