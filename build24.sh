@@ -1,39 +1,13 @@
 #!/bin/bash
 set -e
 
-echo "========================================="
-echo "🍞 构建: $TARGET_ARCH | ${ROM_SIZE}MB"
-echo "========================================="
+echo "🍞 构建: $TARGET_NAME | ${ROM_SIZE}MB"
 
 # 加载包列表
 source /home/build/custom/shell/custom-packages.sh
 
 # 进入构建目录
 cd /home/build/immortalwrt
-
-# 选择 Profile
-case "$TARGET_ARCH" in
-    "x86-64")
-        PROFILE=""
-        ;;
-    *)
-        # 其他架构自动获取第一个可用 profile
-        echo "🍞 查询 $TARGET_ARCH 可用 profiles..."
-        AVAILABLE=$(make info 2>/dev/null | tail -20)
-        echo "$AVAILABLE"
-        
-        # 提取第一个 profile 名称
-        FIRST_PROFILE=$(echo "$AVAILABLE" | grep -v "Available Profiles\|Current Target\|Current Architecture\|Current Revision\|Default Packages\|^\s*$" | head -1 | awk '{print $1}' | sed 's/:$//')
-        
-        if [ -n "$FIRST_PROFILE" ]; then
-            PROFILE="PROFILE=\"$FIRST_PROFILE\""
-            echo "🍞 使用 profile: $FIRST_PROFILE"
-        else
-            echo "❌ 未找到可用 profile"
-            exit 1
-        fi
-        ;;
-esac
 
 # 构建
 echo "🍞 开始编译..."
