@@ -5,15 +5,8 @@ echo "========================================="
 echo "🍞 构建: $TARGET_ARCH | ${ROM_SIZE}MB"
 echo "========================================="
 
-# 加载配置
+# 加载包列表
 source /home/build/custom/shell/custom-packages.sh
-
-# 应用 imm.config（替换而非追加，避免冲突）
-if [ -f "/home/build/custom/$TARGET_ARCH/imm.config" ]; then
-    cat /home/build/custom/$TARGET_ARCH/imm.config > /home/build/immortalwrt/.config
-elif [ -f "/home/build/custom/files/imm.config" ]; then
-    cat /home/build/custom/files/imm.config > /home/build/immortalwrt/.config
-fi
 
 # 进入构建目录
 cd /home/build/immortalwrt
