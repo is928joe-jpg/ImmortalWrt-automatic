@@ -1,7 +1,4 @@
 #!/bin/bash
-# 用法: ./update-options.sh <workflow-file> <input-name> <value1> <value2> ...
-# 示例: ./update-options.sh step2-arch.yml target_arch x86-64 rockchip-armv8
-
 WORKFLOW_FILE="$1"
 INPUT_NAME="$2"
 shift 2
@@ -17,17 +14,16 @@ import re
 with open('.github/workflows/${WORKFLOW_FILE}', 'r') as f:
     content = f.read()
 
-new_options = """${OPTIONS}"""
-
-content = re.sub(
-    r'(${INPUT_NAME}:.*?options:)\n(.*?)(\n      [a-z])',
-    '\\1\n' + new_options + '\\3',
+# 匹配 options: [] 或 options: 后面的内容直到下一个非空字段
+new_content = re.sub(
+    r'(${INPUT_NAME}:.*?options:\s*)\[.*?\]',
+    '\\1\n${OPTIONS}        ',
     content,
     flags=re.DOTALL
 )
 
 with open('.github/workflows/${WORKFLOW_FILE}', 'w') as f:
-    f.write(content)
+    f.write(new_content)
 
-print("Updated ${INPUT_NAME} in ${WORKFLOW_FILE}")
+print("Updated ${INPUT_NAME}")
 EOF
