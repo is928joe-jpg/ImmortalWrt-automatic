@@ -7,11 +7,51 @@ on:
         description: "ImmortalWrt 版本"
         required: true
         type: string
-      target_arch:
-        description: "选择目标架构"
-        required: true
-        type: choice
-        options: []  # 由 step1 自动填充
+      
+          - apm821xx-nand
+          - apm821xx-sata
+          - armsr-armv7
+          - armsr-armv8
+          - at91-sam9x
+          - at91-sama5
+          - at91-sama7
+          - ath79-generic
+          - ath79-mikrotik
+          - ath79-nand
+          - bcm27xx-bcm2708
+          - bcm27xx-bcm2709
+          - bcm27xx-bcm2710
+          - bcm27xx-bcm2711
+          - bcm27xx-bcm2712
+          - bcm47xx-generic
+          - bcm47xx-legacy
+          - bcm47xx-mips74k
+          - bcm4908-generic
+          - bcm53xx-generic
+          - bmips-bcm6318
+          - bmips-bcm63268
+          - bmips-bcm6328
+          - bmips-bcm6358
+          - bmips-bcm6362
+          - bmips-bcm6368
+          - d1-generic
+          - gemini-generic
+          - imx-cortexa53
+          - imx-cortexa7
+          - imx-cortexa9
+          - ipq40xx-chromium
+          - ipq40xx-generic
+          - ipq40xx-mikrotik
+          - ipq806x-chromium
+          - ipq806x-generic
+          - ixp4xx-generic
+          - kirkwood-generic
+          - lantiq-ase
+          - lantiq-xrx200
+          - lantiq-xrx200_legacy
+          - lantiq-xway
+          - lantiq-xway_legacy
+  # 由 step1 自动填充
 
 permissions:
   contents: write
