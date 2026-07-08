@@ -18,15 +18,22 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - name: Build
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Build firmware
         env:
           BUILD_VERSION: ${{ github.event.inputs.version || '24.10.6' }}
           ROM_SIZE: ${{ github.event.inputs.rom_size || '1024' }}
         run: |
-          echo "正在构建版本: $BUILD_VERSION, 大小: $ROM_SIZE MB"
           docker run --rm -i \
             -v "${{ github.workspace }}:/home/build/custom" \
             -e PROFILE=$ROM_SIZE \
             immortalwrt/imagebuilder:x86-64-openwrt-$BUILD_VERSION \
             /bin/bash /home/build/custom/x86-64/build24.sh
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: ImmortalWrt-Firmware
+          path: bin/targets/x86/64/*
