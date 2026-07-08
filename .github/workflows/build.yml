@@ -19,7 +19,7 @@ on:
           - rockchip-armv8
           - mediatek-filogic
       device:
-        description: "设备 Profile（留空自动选择）"
+        description: "设备 Profile（留空自动选择第一个）"
         required: false
         default: ''
       rom_size:
@@ -83,6 +83,7 @@ jobs:
             ## 构建信息
             - 版本: ${{ github.event.inputs.version }}
             - 架构: ${{ github.event.inputs.target_arch }}
+            - 设备: ${{ github.event.inputs.device || '自动' }}
             - 固件大小: ${{ github.event.inputs.rom_size }} MB
             - 构建编号: ${{ github.run_id }}
           files: output/*
