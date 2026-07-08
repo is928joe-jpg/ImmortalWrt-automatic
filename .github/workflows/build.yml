@@ -19,9 +19,13 @@ on:
           - rockchip-armv8
           - mediatek-filogic
       profile:
-        description: "设备 Profile（可选，不填则自动选择第一个）"
-        required: false
-        default: ''
+        description: "选择设备 Profile"
+        required: true
+        type: choice
+        options:
+          - auto
+          - friendlyarm_nanopi-r4s
+          - xiaomi_ax6000
       rom_size:
         description: "固件大小(MB)"
         required: true
@@ -39,52 +43,17 @@ jobs:
 
       - name: 准备输出目录
         run: |
-          echo "========================================="
-          echo "🍞 准备输出目录"
           mkdir -p output
           chmod 777 output
-          echo "  当前用户: $(id)"
-          echo "  工作目录: $(pwd)"
-          echo "  目录结构:"
-          ls -la
-          echo "  output 目录权限:"
-          ls -ld output
-          echo "========================================="
 
       - name: Build firmware
         run: |
-          echo "========================================="
-          echo "🍞 开始构建流程"
-          echo "  版本: ${{ github.event.inputs.version }}"
-          echo "  架构: ${{ github.event.inputs.target_arch }}"
-          echo "  固件大小: ${{ github.event.inputs.rom_size }}MB"
-          
           case "${{ github.event.inputs.target_arch }}" in
-            x86-64)
-              TARGET="x86"
-              SUBTARGET="64"
-              IMAGE="x86-64"
-              ;;
-            rockchip-armv8)
-              TARGET="rockchip"
-              SUBTARGET="armv8"
-              IMAGE="rockchip-armv8"
-              ;;
-            mediatek-filogic)
-              TARGET="mediatek"
-              SUBTARGET="filogic"
-              IMAGE="mediatek-filogic"
-              ;;
+            x86-64) TARGET="x86"; SUBTARGET="64"; IMAGE="x86-64" ;;
+            rockchip-armv8) TARGET="rockchip"; SUBTARGET="armv8"; IMAGE="rockchip-armv8" ;;
+            mediatek-filogic) TARGET="mediatek"; SUBTARGET="filogic"; IMAGE="mediatek-filogic" ;;
           esac
-          
-          echo "  解析结果:"
-          echo "    TARGET=$TARGET"
-          echo "    SUBTARGET=$SUBTARGET"
-          echo "    IMAGE=$IMAGE"
-          echo "    镜像: immortalwrt/imagebuilder:${IMAGE}-openwrt-${{ github.event.inputs.version }}"
-          echo "========================================="
-          
-          echo "🍞 拉取并运行 Docker 容器"
+
           docker run --rm -i \
             -v "${{ github.workspace }}:/home/build/custom" \
             -e TARGET="$TARGET" \
@@ -95,30 +64,14 @@ jobs:
             -e PROFILE_INPUT="${{ github.event.inputs.profile }}" \
             immortalwrt/imagebuilder:${IMAGE}-openwrt-${{ github.event.inputs.version }} \
             /bin/bash /home/build/custom/build24.sh
-          
-          echo "🍞 Docker 容器执行完毕"
 
       - name: 修复输出权限
         if: always()
         run: |
-          echo "========================================="
-          echo "🍞 修复输出文件权限"
-          echo "  当前用户: $(id)"
-          echo "  output 目录状态:"
-          ls -ld output 2>/dev/null || echo "  output 目录不存在"
-          echo "  output 内容:"
-          ls -lh output/ 2>/dev/null || echo "  output 目录为空"
-          
           if [ -d "output" ]; then
-            echo "  修复权限中..."
-            sudo chown -R $(id -u):$(id -g) output 2>/dev/null || echo "  ⚠️ chown 失败"
-            chmod -R 755 output 2>/dev/null || echo "  ⚠️ chmod 失败"
-            echo "  修复后 output 权限:"
-            ls -ld output
-          else
-            echo "  ❌ output 目录不存在，无需修复"
+            sudo chown -R $(id -u):$(id -g) output 2>/dev/null || true
+            chmod -R 755 output 2>/dev/null || true
           fi
-          echo "========================================="
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
