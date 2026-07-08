@@ -28,5 +28,25 @@ jobs:
           TOKEN=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:immortalwrt/imagebuilder:pull" | jq -r '.token')
           
           curl -sH "Authorization: Bearer $TOKEN" \
-            "https://registry-1.docker.io/v2/immortalwrt/imagebuilder/tags/list?n=1000" | \
-            jq -r '.tags[]' | grep "openwrt-${VERSION}" | sed "s/-openwrt-${VERSION}//" | sort -u | head -20
+            "https://registry-1.docker.io/v2/immortalwrt/imagebuilder/tags/list?n=2000" | \
+            jq -r '.tags[]' | grep "openwrt-${VERSION}" | sed "s/-openwrt-${VERSION}//" | sort -u
+
+      - name: 更新 step2-arch.yml
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          TOKEN=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:immortalwrt/imagebuilder:pull" | jq -r '.token')
+          
+          ARCHS=$(curl -sH "Authorization: Bearer $TOKEN" \
+            "https://registry-1.docker.io/v2/immortalwrt/imagebuilder/tags/list?n=2000" | \
+            jq -r '.tags[]' | grep "openwrt-${VERSION}" | sed "s/-openwrt-${VERSION}//" | sort -u)
+          
+          chmod +x .github/workflows/update-options.sh
+          .github/workflows/update-options.sh step2-arch.yml target_arch $ARCHS
+
+      - name: 提交更新
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add .github/workflows/step2-arch.yml
+          git diff --staged --quiet || git commit -m "Auto: arch list for ${{ github.event.inputs.version }}"
+          git push
