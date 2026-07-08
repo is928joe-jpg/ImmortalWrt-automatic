@@ -15,10 +15,11 @@ make image \
 # 检查结果
 if [ $? -eq 0 ]; then
     echo "✅ 构建成功"
-    # 复制产物到挂载目录
     mkdir -p /home/build/custom/output
     cp -r /home/build/openwrt/bin/targets/x86/64/* /home/build/custom/output/ 2>/dev/null || \
     cp -r /home/build/immortalwrt/bin/targets/x86/64/* /home/build/custom/output/ 2>/dev/null
+    echo "构建产物："
+    ls -la /home/build/custom/output/
 else
     echo "❌ 构建失败"
     exit 1
