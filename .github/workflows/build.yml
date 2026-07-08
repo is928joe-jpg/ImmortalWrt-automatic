@@ -1,25 +1,24 @@
-name: Build ImmortalWrt 24.10.x
+name: Build ImmortalWrt Multi-Arch
 
 on:
   workflow_dispatch:
     inputs:
+      version:
+        description: "ImmortalWrt 版本"
+        required: true
+        default: '24.10.6'
+      target:
+        description: "CPU 架构 (例如: x86, rockchip, mediatek)"
+        required: true
+        default: 'x86'
+      subtarget:
+        description: "子架构 (例如: 64, armv8, filogic)"
+        required: true
+        default: '64'
       rom_size:
         description: "固件大小(MB)"
         required: true
         default: '512'
-      version:
-        description: "ImmortalWrt 版本 (例如: 24.10.6)"
-        required: true
-        default: '24.10.6'
-  schedule:
-    - cron: '0 2 * * 1'
-
-permissions:
-  contents: write
-
-env:
-  BUILD_VERSION: ${{ github.event.inputs.version || '24.10.6' }}
-  ROM_SIZE: ${{ github.event.inputs.rom_size || '512' }}
 
 jobs:
   build:
@@ -28,34 +27,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: 准备输出目录
-        run: |
-          mkdir -p output
-          chmod 777 output
-
       - name: Build firmware
         run: |
           docker run --rm -i \
             -v "${{ github.workspace }}:/home/build/custom" \
+            -e TARGET=${{ github.event.inputs.target }} \
+            -e SUBTARGET=${{ github.event.inputs.subtarget }} \
             -e PROFILE=$ROM_SIZE \
-            immortalwrt/imagebuilder:x86-64-openwrt-$BUILD_VERSION \
-            /bin/bash /home/build/custom/x86-64/build24.sh
+            -e VERSION=${{ github.event.inputs.version }} \
+            immortalwrt/imagebuilder:${{ github.event.inputs.target }}-${{ github.event.inputs.subtarget }}-openwrt-${{ github.event.inputs.version }} \
+            /bin/bash /home/build/custom/scripts/build.sh
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
-          name: ImmortalWrt-Firmware
+          name: ImmortalWrt-${{ github.event.inputs.target }}
           path: output/*
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          # 强制添加 'v' 前缀，确保 Tag 格式合法，且避免以数字或特殊符号开头
-          tag_name: v${{ env.BUILD_VERSION }}-${{ github.run_id }}
-          name: ImmortalWrt ${{ env.BUILD_VERSION }} Build
-          body: |
-            ImmortalWrt ${{ env.BUILD_VERSION }} 自动构建版本。
-            构建编号: ${{ github.run_id }}
-          files: output/*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
