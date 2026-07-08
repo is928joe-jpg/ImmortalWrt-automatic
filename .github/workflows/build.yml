@@ -12,9 +12,9 @@ on:
         required: true
         default: '24.10.6'
       image_types:
-        description: "镜像类型（多选用逗号分隔，留空=全部）\n可选: combined-efi, combined, rootfs-ext4, rootfs-squashfs"
+        description: "镜像类型（多选用逗号分隔，留空=全部）\n可选: combined-efi-ext4, combined-efi-squashfs, combined-ext4, combined-squashfs, rootfs-ext4, rootfs-squashfs, rootfs-targz, iso-efi, iso"
         required: false
-        default: 'combined-efi,combined'
+        default: 'combined-efi-ext4,combined-efi-squashfs'
   schedule:
     - cron: '0 2 * * 1'
 
@@ -37,14 +37,14 @@ jobs:
             /bin/bash /home/build/custom/x86-64/build24.sh
 
       - name: 筛选需要的镜像
-        id: filter
         run: |
           IMAGE_TYPES="${{ github.event.inputs.image_types }}"
           
-          # 如果为空或all，则全部复制
-          if [ -z "$IMAGE_TYPES" ] || [ "$IMAGE_TYPES" = "all" ]; then
+          mkdir -p filtered_output
+          
+          # 如果为空，复制全部
+          if [ -z "$IMAGE_TYPES" ]; then
             echo "📦 复制所有镜像"
-            mkdir -p filtered_output
             cp -r output/* filtered_output/
           else
             # 按逗号分割
@@ -52,16 +52,36 @@ jobs:
             
             echo "📦 筛选镜像类型: ${TYPES[*]}"
             
+            # 定义匹配模式
+            declare -A PATTERNS=(
+              ["combined-efi-ext4"]="EXT4-COMBINED-EFI"
+              ["combined-efi-squashfs"]="SQUASHFS-COMBINED-EFI"
+              ["combined-ext4"]="EXT4-COMBINED\.[^E]"
+              ["combined-squashfs"]="SQUASHFS-COMBINED\.[^E]"
+              ["rootfs-ext4"]="EXT4-ROOTFS"
+              ["rootfs-squashfs"]="SQUASHFS-ROOTFS"
+              ["rootfs-targz"]="TARGZ-ROOTFS"
+              ["iso-efi"]="IMAGE-EFI\.ISO"
+              ["iso"]="IMAGE\.ISO"
+            )
+            
             for TYPE in "${TYPES[@]}"; do
               # 去除前后空格
               TYPE=$(echo "$TYPE" | xargs)
-              echo "  处理: $TYPE"
+              PATTERN="${PATTERNS[$TYPE]}"
               
-              # 复制匹配的 .bin 文件
-              find output -name "*${TYPE}*.bin" -exec cp {} filtered_output/ \;
-              # 复制对应的校验文件
-              find output -name "*${TYPE}*.sha256sums" -exec cp {} filtered_output/ \;
-              find output -name "*${TYPE}*.manifest" -exec cp {} filtered_output/ \;
+              if [ -z "$PATTERN" ]; then
+                echo "⚠️ 未知类型: $TYPE，跳过"
+                continue
+              fi
+              
+              echo "  处理: $TYPE (匹配: $PATTERN)"
+              
+              # 使用 grep 匹配文件名
+              find output -type f | grep -E "$PATTERN" | while read -r FILE; do
+                cp "$FILE" filtered_output/
+                echo "    复制: $(basename "$FILE")"
+              done
             done
             
             # 如果没有找到任何文件，复制全部（兜底）
@@ -72,7 +92,7 @@ jobs:
           fi
           
           echo ""
-          echo "筛选后的文件："
+          echo "✅ 筛选后的文件 (共 $(ls -1 filtered_output 2>/dev/null | wc -l) 个)："
           ls -la filtered_output/
 
       - name: Upload firmware
