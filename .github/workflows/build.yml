@@ -38,3 +38,12 @@ jobs:
           name: ImmortalWrt-Firmware
           # 关键：这里指定容器内镜像构建产生的标准路径，Actions 会自动从挂载的工作区抓取
           path: bin/targets/x86/64/*
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.BUILD_VERSION }}-${{ github.run_id }}
+          name: ImmortalWrt ${{ env.BUILD_VERSION }} Build
+          files: bin/targets/x86/64/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}          
