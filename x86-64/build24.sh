@@ -3,8 +3,9 @@ set -e
 
 source /home/build/custom/shell/custom-packages.sh
 
-cd /home/build/openwrt || {
-    echo "❌ ImageBuilder 构建目录不存在"
+# ImageBuilder 的真实目录
+cd /builder || {
+    echo "❌ ImageBuilder 构建目录不存在 (/builder)"
     exit 1
 }
 
@@ -24,6 +25,6 @@ make image \
   ROOTFS_PARTSIZE=$ROM_SIZE
 
 mkdir -p /home/build/custom/output
-cp -rv /home/build/openwrt/bin/targets/$TARGET/$SUBTARGET/* /home/build/custom/output/
+cp -rv /builder/bin/targets/$TARGET/$SUBTARGET/* /home/build/custom/output/
 chmod -R 755 /home/build/custom/output
 ls -lh /home/build/custom/output/
