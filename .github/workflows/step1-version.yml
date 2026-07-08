@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.PAT }}
 
       - name: 获取架构列表
         run: |
@@ -30,8 +32,6 @@ jobs:
           curl -sH "Authorization: Bearer $TOKEN" \
             "https://registry-1.docker.io/v2/immortalwrt/imagebuilder/tags/list?n=2000" | \
             jq -r '.tags[]' | grep "openwrt-${VERSION}$" | sed "s/-openwrt-${VERSION}//" | sort -u | tee /tmp/archs.txt
-          
-          echo "=== 数量: $(wc -l < /tmp/archs.txt) ==="
 
       - name: 更新 step2-arch.yml
         run: |
