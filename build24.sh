@@ -45,6 +45,8 @@ fi
 
 # 复制输出
 OUTPUT_DIR="bin/targets/$TARGET/$SUBTARGET"
+rm -rf /tmp/firmware
+mkdir -p /tmp/firmware
 cp -r "$OUTPUT_DIR"/* /tmp/firmware/
 mkdir -p /home/build/custom/output
 cp -r /tmp/firmware/* /home/build/custom/output/ 2>/dev/null || \
