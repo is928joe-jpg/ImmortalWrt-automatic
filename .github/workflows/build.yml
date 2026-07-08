@@ -750,6 +750,8 @@ on:
           - sinovoip_bpi-m2-berry
           - sinovoip_bpi-m2-ultra
           - haoyu_a10-marsboard
+            # 这里放options列表
+
       rom_size:
         description: "固件大小(MB)"
         required: true
@@ -763,16 +765,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: 准备输出目录
         run: |
           mkdir -p output
           chmod 777 output
 
+      - name: Set artifact name
         id: artifact
         run: |
           echo "name=$(echo '${{ github.event.inputs.target }}' | sed 's|/|-|g')" >> $GITHUB_OUTPUT
 
+      - name: Build firmware
         run: |
           TARGET_INPUT="${{ github.event.inputs.target }}"
           ARCH="${TARGET_INPUT%%/*}"
@@ -806,6 +812,7 @@ jobs:
             immortalwrt/imagebuilder:$IMAGE \
             /bin/bash /home/build/custom/build24.sh
 
+      - name: 修复输出权限
         if: always()
         run: |
           if [ -d "output" ]; then
@@ -813,16 +820,21 @@ jobs:
             chmod -R 755 output 2>/dev/null || true
           fi
 
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.artifact.outputs.name }}-${{ github.event.inputs.version }}
           path: output/*
 
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.version }}-${{ github.run_id }}
           name: ImmortalWrt ${{ github.event.inputs.version }} - ${{ github.event.inputs.target }}
           body: |
+            - 版本: ${{ github.event.inputs.version }}
+            - 目标: ${{ github.event.inputs.target }}
+            - 固件大小: ${{ github.event.inputs.rom_size }} MB
           files: output/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
