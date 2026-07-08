@@ -16,3 +16,5 @@ build_dir/
 # Python 缓存
 __pycache__/
 *.pyc
+profiles.txt
+
