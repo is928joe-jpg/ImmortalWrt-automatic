@@ -35,9 +35,60 @@ on:
           - bcm47xx-mips74k/generic
           - bcm4908-generic/generic
           - bcm53xx-generic/generic
+          - bmips-bcm6318/generic
+          - bmips-bcm63268/generic
+          - bmips-bcm6328/generic
+          - bmips-bcm6358/generic
+          - bmips-bcm6362/generic
+          - bmips-bcm6368/generic
+          - d1-generic/generic
+          - gemini-generic/generic
+          - imx-cortexa53/generic
+          - imx-cortexa7/generic
+          - imx-cortexa9/generic
+          - ipq40xx-chromium/generic
+          - ipq40xx-generic/generic
+          - ipq40xx-mikrotik/generic
+          - ipq806x-chromium/generic
+          - ipq806x-generic/generic
+          - ixp4xx-generic/generic
+          - kirkwood-generic/generic
+          - lantiq-ase/generic
+          - lantiq-xrx200/generic
+          - lantiq-xrx200_legacy/generic
+          - lantiq-xway/generic
+          - lantiq-xway_legacy/generic
+          - layerscape-armv8_64b/generic
+          - loongarch64-generic/generic
+          - malta-be/generic
           - mediatek-filogic/xiaomi_ax6000
+          - mediatek-mt7622/generic
+          - mediatek-mt7623/generic
+          - mediatek-mt7629/generic
+          - mpc85xx-p1010/generic
+          - mpc85xx-p1020/generic
+          - mpc85xx-p2020/generic
+          - mvebu-cortexa53/generic
+          - mvebu-cortexa72/generic
+          - mvebu-cortexa9/generic
+          - mxs-generic/generic
+          - octeon-generic/generic
+          - omap-generic/generic
+          - pistachio-generic/generic
+          - qoriq-generic/generic
           - rockchip-armv8/friendlyarm_nanopi-r4s
+          - sifiveu-generic/generic
+          - starfive-generic/generic
+          - sunxi-cortexa7/generic
+          - sunxi-cortexa8/generic
+          - sunxi-cortexa53/generic
+          - tegra-generic/generic
+          - uml/generic
           - x86-64/generic
+          - x86-generic/generic
+          - x86-geode/generic
+          - x86-legacy/generic
+          - zynq-generic/generic
       rom_size:
         description: "固件大小(MB)"
         required: true
@@ -58,6 +109,11 @@ jobs:
         run: |
           mkdir -p output
           chmod 777 output
+
+      - name: Set artifact name
+        id: artifact
+        run: |
+          echo "name=$(echo '${{ github.event.inputs.target }}' | sed 's|/|-|g')" >> $GITHUB_OUTPUT
 
       - name: Build firmware
         run: |
@@ -104,7 +160,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ github.event.inputs.target }}-${{ github.event.inputs.version }}
+          name: ${{ steps.artifact.outputs.name }}-${{ github.event.inputs.version }}
           path: output/*
 
       - name: Create Release
