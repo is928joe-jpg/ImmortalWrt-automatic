@@ -1,0 +1,16 @@
+name: Generate Profiles List
+on:
+  workflow_dispatch:
+
+jobs:
+  run-parser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch and Parse
+        run: |
+          git clone --depth=1 https://github.com/immortalwrt/immortalwrt.git source
+          echo "Profile | Supported Devices"
+          echo "------- | -----------------"
+          grep -rE "define Device/|SUPPORTED_DEVICES" source/target/linux/*/image/*.mk | \
+          awk '/define Device\// {sub(/.*define Device\//, ""); sub(/\//, ": "); p=$1} 
+               /SUPPORTED_DEVICES/ {sub(/.*:= /, ""); print p " | " $0}'
