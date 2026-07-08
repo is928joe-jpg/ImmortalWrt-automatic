@@ -37,8 +37,6 @@ jobs:
         run: |
           mkdir -p output
           chmod 777 output
-          echo "Output directory permissions:"
-          ls -ld output
 
       - name: Build firmware
         run: |
@@ -49,7 +47,6 @@ jobs:
           esac
 
           docker run --rm -i \
-            --user $(id -u):$(id -g) \
             -v "${{ github.workspace }}:/home/build/custom" \
             -e TARGET="$TARGET" \
             -e SUBTARGET="$SUBTARGET" \
@@ -58,6 +55,11 @@ jobs:
             -e TARGET_ARCH="${{ github.event.inputs.target_arch }}" \
             immortalwrt/imagebuilder:${IMAGE}-openwrt-${{ github.event.inputs.version }} \
             /bin/bash /home/build/custom/${{ github.event.inputs.target_arch }}/build24.sh
+
+      - name: 修复输出权限
+        run: |
+          sudo chown -R $(id -u):$(id -g) output
+          chmod -R 755 output
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
