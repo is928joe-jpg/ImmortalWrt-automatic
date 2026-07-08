@@ -29,83 +29,26 @@ jobs:
         env:
           BUILD_VERSION: ${{ github.event.inputs.version || '24.10.6' }}
           ROM_SIZE: ${{ github.event.inputs.rom_size || '512' }}
+          IMAGE_TYPES: ${{ github.event.inputs.image_types }}
         run: |
           docker run --rm -i \
             -v "${{ github.workspace }}:/home/build/custom" \
             -e PROFILE=$ROM_SIZE \
+            -e IMAGE_TYPES="$IMAGE_TYPES" \
             immortalwrt/imagebuilder:x86-64-openwrt-$BUILD_VERSION \
             /bin/bash /home/build/custom/x86-64/build24.sh
-
-      - name: 筛选需要的镜像
-        run: |
-          IMAGE_TYPES="${{ github.event.inputs.image_types }}"
-          
-          mkdir -p filtered_output
-          
-          # 如果为空，复制全部
-          if [ -z "$IMAGE_TYPES" ]; then
-            echo "📦 复制所有镜像"
-            cp -r output/* filtered_output/
-          else
-            # 按逗号分割
-            IFS=',' read -ra TYPES <<< "$IMAGE_TYPES"
-            
-            echo "📦 筛选镜像类型: ${TYPES[*]}"
-            
-            # 定义匹配模式
-            declare -A PATTERNS=(
-              ["combined-efi-ext4"]="EXT4-COMBINED-EFI"
-              ["combined-efi-squashfs"]="SQUASHFS-COMBINED-EFI"
-              ["combined-ext4"]="EXT4-COMBINED\.[^E]"
-              ["combined-squashfs"]="SQUASHFS-COMBINED\.[^E]"
-              ["rootfs-ext4"]="EXT4-ROOTFS"
-              ["rootfs-squashfs"]="SQUASHFS-ROOTFS"
-              ["rootfs-targz"]="TARGZ-ROOTFS"
-              ["iso-efi"]="IMAGE-EFI\.ISO"
-              ["iso"]="IMAGE\.ISO"
-            )
-            
-            for TYPE in "${TYPES[@]}"; do
-              # 去除前后空格
-              TYPE=$(echo "$TYPE" | xargs)
-              PATTERN="${PATTERNS[$TYPE]}"
-              
-              if [ -z "$PATTERN" ]; then
-                echo "⚠️ 未知类型: $TYPE，跳过"
-                continue
-              fi
-              
-              echo "  处理: $TYPE (匹配: $PATTERN)"
-              
-              # 使用 grep 匹配文件名
-              find output -type f | grep -E "$PATTERN" | while read -r FILE; do
-                cp "$FILE" filtered_output/
-                echo "    复制: $(basename "$FILE")"
-              done
-            done
-            
-            # 如果没有找到任何文件，复制全部（兜底）
-            if [ -z "$(ls -A filtered_output 2>/dev/null)" ]; then
-              echo "⚠️ 未找到匹配的镜像，复制所有文件"
-              cp -r output/* filtered_output/
-            fi
-          fi
-          
-          echo ""
-          echo "✅ 筛选后的文件 (共 $(ls -1 filtered_output 2>/dev/null | wc -l) 个)："
-          ls -la filtered_output/
 
       - name: Upload firmware
         uses: actions/upload-artifact@v4
         with:
           name: ImmortalWrt-Firmware
-          path: filtered_output/*
+          path: output/*
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.BUILD_VERSION }}-${{ github.run_id }}
           name: ImmortalWrt ${{ env.BUILD_VERSION }} Build
-          files: filtered_output/*
+          files: output/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
