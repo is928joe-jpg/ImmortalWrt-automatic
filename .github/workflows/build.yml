@@ -18,6 +18,10 @@ on:
           - x86-64
           - rockchip-armv8
           - mediatek-filogic
+      profile:
+        description: "设备 Profile（x86-64 留空）"
+        required: false
+        default: ''
       rom_size:
         description: "固件大小(MB)"
         required: true
@@ -88,6 +92,7 @@ jobs:
             -e ROM_SIZE="${{ github.event.inputs.rom_size }}" \
             -e VERSION="${{ github.event.inputs.version }}" \
             -e TARGET_ARCH="${{ github.event.inputs.target_arch }}" \
+            -e PROFILE_INPUT="${{ github.event.inputs.profile }}" \
             immortalwrt/imagebuilder:${IMAGE}-openwrt-${{ github.event.inputs.version }} \
             /bin/bash /home/build/custom/build24.sh
           

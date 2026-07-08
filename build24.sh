@@ -16,18 +16,22 @@ case "$TARGET_ARCH" in
     "x86-64")
         PROFILE=""
         ;;
-    "rockchip-armv8")
-        PROFILE='PROFILE="friendlyarm_nanopi-r4s"'
-        ;;
-    "mediatek-filogic")
-        echo "🍞 查询可用 profiles..."
-        make info 2>/dev/null | grep -iE "xiaomi|redmi|ax6000|ax3000|filogic"
-        echo "🍞 所有 profiles:"
-        make info 2>/dev/null | tail -20
-        PROFILE='PROFILE="xiaomi_ax6000"'
-        ;;
     *)
-        PROFILE=""
+        # 其他架构自动获取第一个可用 profile
+        echo "🍞 查询 $TARGET_ARCH 可用 profiles..."
+        AVAILABLE=$(make info 2>/dev/null | tail -20)
+        echo "$AVAILABLE"
+        
+        # 提取第一个 profile 名称
+        FIRST_PROFILE=$(echo "$AVAILABLE" | grep -v "Available Profiles\|Current Target\|Current Architecture\|Current Revision\|Default Packages\|^\s*$" | head -1 | awk '{print $1}' | sed 's/:$//')
+        
+        if [ -n "$FIRST_PROFILE" ]; then
+            PROFILE="PROFILE=\"$FIRST_PROFILE\""
+            echo "🍞 使用 profile: $FIRST_PROFILE"
+        else
+            echo "❌ 未找到可用 profile"
+            exit 1
+        fi
         ;;
 esac
 
