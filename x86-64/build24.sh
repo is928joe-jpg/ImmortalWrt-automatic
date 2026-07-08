@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-source /home/build/custom/ImmortalWrt/shell/custom-packages.sh
+source /home/build/custom/openwrt/ImmortalWrt/shell/custom-packages.sh
 
 cd /home/build/openwrt || {
     echo "❌ ImageBuilder 构建目录不存在"
@@ -20,7 +20,7 @@ echo "目标: $TARGET/$SUBTARGET | Profile: $DEVICE_PROFILE | 固件大小: ${RO
 make image \
   PROFILE="$DEVICE_PROFILE" \
   PACKAGES="$CUSTOM_PACKAGES" \
-  FILES="/home/build/custom/ImmortalWrt/files" \
+  FILES="/home/build/custom/openwrt/ImmortalWrt/files" \
   ROOTFS_PARTSIZE=$ROM_SIZE
 
 mkdir -p /home/build/custom/output
