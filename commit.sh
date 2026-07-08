@@ -15,10 +15,13 @@ MESSAGE=${1:-"fix: 自动提交更新"}
 
 echo "🚀 正在从 $(pwd) 提交代码..."
 
+# git pull --rebase origin main
+
 # 4. 执行 Git 操作
 git add .
 git commit -m "$MESSAGE"
 git push origin main
+
 
 if [ $? -eq 0 ]; then
     echo "✅ 提交并推送成功！"
