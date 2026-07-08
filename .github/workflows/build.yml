@@ -24,7 +24,7 @@ jobs:
       - name: Build firmware
         env:
           BUILD_VERSION: ${{ github.event.inputs.version || '24.10.6' }}
-          ROM_SIZE: ${{ github.event.inputs.rom_size || '1024' }}
+          ROM_SIZE: ${{ github.event.inputs.rom_size || '512' }}
         run: |
           docker run --rm -i \
             -v "${{ github.workspace }}:/home/build/custom" \
@@ -36,4 +36,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ImmortalWrt-Firmware
+          # 关键：这里指定容器内镜像构建产生的标准路径，Actions 会自动从挂载的工作区抓取
           path: bin/targets/x86/64/*
