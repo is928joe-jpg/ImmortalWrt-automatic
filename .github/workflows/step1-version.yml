@@ -14,7 +14,6 @@ on:
 permissions:
   contents: write
   actions: write
-  workflows: write
 
 jobs:
   get-archs:
@@ -22,8 +21,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 获取架构列表
         run: |
@@ -42,8 +39,7 @@ jobs:
           .github/workflows/update-options.sh step2-arch.yml target_arch $(cat /tmp/archs.txt | tr '\n' ' ')
 
       - name: 提交
-        run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-          git add .github/workflows/step2-arch.yml
-          git diff --staged --quiet || (git commit -m "Auto: archs for ${{ github.event.inputs.version }}" && git push)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto: archs for ${{ github.event.inputs.version }}"
+          file_pattern: '.github/workflows/step2-arch.yml'
