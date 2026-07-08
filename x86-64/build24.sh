@@ -9,21 +9,18 @@ if [ -d "/builder" ]; then
     BUILDER_DIR="/builder"
 elif [ -d "/home/build" ] && [ -f "/home/build/Makefile" ]; then
     BUILDER_DIR="/home/build"
+elif [ -d "/home/build/immortalwrt" ] && [ -f "/home/build/immortalwrt/Makefile" ]; then
+    BUILDER_DIR="/home/build/immortalwrt"
 else
-    # 自动查找包含 Makefile 且包含 'image' 目标的目录
-    BUILDER_DIR=$(find / -maxdepth 3 -name "Makefile" -path "*/target/linux" 2>/dev/null | head -1 | xargs dirname | xargs dirname | xargs dirname 2>/dev/null || echo "")
-    
-    if [ -z "$BUILDER_DIR" ]; then
-        # 尝试查找 ImageBuilder 的特征文件
-        BUILDER_DIR=$(find / -maxdepth 4 -name ".config" -o -name "repositories.conf" 2>/dev/null | head -1 | xargs dirname 2>/dev/null || echo "")
-    fi
+    # 自动查找包含 Makefile 的 ImageBuilder 目录
+    BUILDER_DIR=$(find / -maxdepth 4 -name "Makefile" -exec grep -l "include.*image.mk" {} \; 2>/dev/null | head -1 | xargs dirname 2>/dev/null || echo "")
     
     if [ -z "$BUILDER_DIR" ] || [ ! -d "$BUILDER_DIR" ]; then
         echo "❌ 无法找到 ImageBuilder 构建目录"
         echo "目录结构:"
         ls -la /
-        echo "尝试查找 Makefile:"
-        find / -name "Makefile" -maxdepth 3 2>/dev/null
+        echo "查找可能的 Makefile:"
+        find / -name "Makefile" -maxdepth 4 2>/dev/null
         exit 1
     fi
 fi
@@ -34,8 +31,8 @@ cd "$BUILDER_DIR" || {
     exit 1
 }
 
-# 列出当前目录内容以确认
-echo "当前目录内容:"
+echo "当前用户: $(id)"
+echo "当前目录: $(pwd)"
 ls -la
 
 # 选择设备 Profile
@@ -55,8 +52,12 @@ make image \
   FILES="/home/build/custom/files" \
   ROOTFS_PARTSIZE=$ROM_SIZE
 
-# 输出固件
+# 输出固件（不修改权限，直接复制）
+echo "构建完成，复制固件文件..."
 mkdir -p /home/build/custom/output
-cp -rv $BUILDER_DIR/bin/targets/$TARGET/$SUBTARGET/* /home/build/custom/output/
-chmod -R 755 /home/build/custom/output
+cp -rv $BUILDER_DIR/bin/targets/$TARGET/$SUBTARGET/* /home/build/custom/output/ 2>/dev/null || \
+cp -rv bin/targets/$TARGET/$SUBTARGET/* /home/build/custom/output/
+
+# 不执行 chmod，而是直接显示文件
+echo "输出的固件文件:"
 ls -lh /home/build/custom/output/
