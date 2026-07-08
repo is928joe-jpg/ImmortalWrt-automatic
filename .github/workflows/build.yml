@@ -20,12 +20,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: Build
-        # 使用 env 获取动态版本号，如果手动触发则使用输入值，否则使用默认值
         env:
           BUILD_VERSION: ${{ github.event.inputs.version || '24.10.6' }}
+          ROM_SIZE: ${{ github.event.inputs.rom_size || '1024' }}
         run: |
-          echo "正在构建版本: $BUILD_VERSION"
+          echo "正在构建版本: $BUILD_VERSION, 大小: $ROM_SIZE MB"
           docker run --rm -i \
-            -v "${{ github.workspace }}:/home/build/immortalwrt" \
-            -e PROFILE=${{ github.event.inputs.rom_size || '1024' }} \
-            immortalwrt/imagebuilder:x86-64-openwrt-$BUILD_VERSION /bin/bash /home/build/immortalwrt/x86-64/build24.sh
+            -v "${{ github.workspace }}:/home/build/custom" \
+            -e PROFILE=$ROM_SIZE \
+            immortalwrt/imagebuilder:x86-64-openwrt-$BUILD_VERSION \
+            /bin/bash /home/build/custom/x86-64/build24.sh
