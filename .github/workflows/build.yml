@@ -19,7 +19,7 @@ on:
           - rockchip-armv8
           - mediatek-filogic
       profile:
-        description: "设备 Profile（x86-64 留空）"
+        description: "设备 Profile（可选，不填则自动选择第一个）"
         required: false
         default: ''
       rom_size:
