@@ -21,6 +21,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
+      - name: 准备输出目录
+        run: |
+          mkdir -p output
+          chmod 777 output
+
       - name: Build firmware
         env:
           BUILD_VERSION: ${{ github.event.inputs.version || '24.10.6' }}
