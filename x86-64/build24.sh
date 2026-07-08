@@ -1,12 +1,11 @@
 #!/bin/bash
 source /home/build/custom/shell/custom-packages.sh
 
-# 进入正确的编译环境
+# 进入编译环境
 cd /home/build/openwrt || cd /home/build/immortalwrt || cd /
 
 echo "正在执行构建..."
 
-# 不再指定 BIN_DIR，使用 ImageBuilder 默认的输出路径
 make image \
   PROFILE="generic" \
   PACKAGES="$CUSTOM_PACKAGES" \
@@ -16,6 +15,10 @@ make image \
 # 检查结果
 if [ $? -eq 0 ]; then
     echo "✅ 构建成功"
+    # 复制产物到挂载目录
+    mkdir -p /home/build/custom/output
+    cp -r /home/build/openwrt/bin/targets/x86/64/* /home/build/custom/output/ 2>/dev/null || \
+    cp -r /home/build/immortalwrt/bin/targets/x86/64/* /home/build/custom/output/ 2>/dev/null
 else
     echo "❌ 构建失败"
     exit 1
