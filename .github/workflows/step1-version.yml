@@ -13,6 +13,8 @@ on:
 
 permissions:
   contents: write
+  actions: write
+  workflows: write
 
 jobs:
   get-archs:
@@ -20,6 +22,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 获取架构列表
         run: |
