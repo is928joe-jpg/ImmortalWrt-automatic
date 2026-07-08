@@ -10,14 +10,19 @@ on:
         options:
           - 24.10.6
           - 24.10.5
-      target:
-        description: "选择目标设备"
+      target_arch:
+        description: "选择目标架构"
         required: true
         type: choice
         options:
-          - x86-64 (generic)
-          - rockchip-armv8 / friendlyarm_nanopi-r4s
-          - mediatek-filogic / xiaomi_ax6000
+          - x86-64
+          - rockchip-armv8
+          - mediatek-filogic
+      device:
+        description: "设备 Profile（从 discover 阶段获取，或手动输入）"
+        required: true
+        type: string
+        default: ''
       rom_size:
         description: "固件大小(MB)"
         required: true
@@ -28,7 +33,29 @@ permissions:
   contents: write
 
 jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      profiles: ${{ steps.list.outputs.profiles }}
+    steps:
+      - name: 获取可用设备列表
+        id: list
+        run: |
+          case "${{ github.event.inputs.target_arch }}" in
+            x86-64) IMAGE="x86-64" ;;
+            rockchip-armv8) IMAGE="rockchip-armv8" ;;
+            mediatek-filogic) IMAGE="mediatek-filogic" ;;
+          esac
+          
+          echo "🍞 拉取镜像获取 Profile 列表..."
+          PROFILES=$(docker run --rm immortalwrt/imagebuilder:${IMAGE}-openwrt-${{ github.event.inputs.version }} \
+            make info 2>/dev/null | grep -oP '^\s*\K[^\s:]+(?=:)' | grep -v "Current\|Default\|Available" | sort -u | jq -R . | jq -s -c .)
+          
+          echo "profiles=$PROFILES" >> $GITHUB_OUTPUT
+          echo "可用设备: $PROFILES"
+
   build:
+    needs: discover
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -41,32 +68,23 @@ jobs:
 
       - name: Build firmware
         run: |
-          case "${{ github.event.inputs.target }}" in
-            "x86-64 (generic)")
-              TARGET="x86"
-              SUBTARGET="64"
-              IMAGE="x86-64"
-              PROFILE=""
-              ;;
-            "rockchip-armv8 / friendlyarm_nanopi-r4s")
-              TARGET="rockchip"
-              SUBTARGET="armv8"
-              IMAGE="rockchip-armv8"
-              PROFILE='PROFILE="friendlyarm_nanopi-r4s"'
-              ;;
-            "mediatek-filogic / xiaomi_ax6000")
-              TARGET="mediatek"
-              SUBTARGET="filogic"
-              IMAGE="mediatek-filogic"
-              PROFILE='PROFILE="xiaomi_ax6000"'
-              ;;
+          case "${{ github.event.inputs.target_arch }}" in
+            x86-64) TARGET="x86"; SUBTARGET="64"; IMAGE="x86-64" ;;
+            rockchip-armv8) TARGET="rockchip"; SUBTARGET="armv8"; IMAGE="rockchip-armv8" ;;
+            mediatek-filogic) TARGET="mediatek"; SUBTARGET="filogic"; IMAGE="mediatek-filogic" ;;
           esac
+
+          DEVICE="${{ github.event.inputs.device }}"
+          if [ -z "$DEVICE" ]; then
+            DEVICE=$(echo '${{ needs.discover.outputs.profiles }}' | jq -r '.[0]')
+            echo "🍞 自动选择第一个: $DEVICE"
+          fi
 
           docker run --rm -i \
             -v "${{ github.workspace }}:/home/build/custom" \
             -e TARGET="$TARGET" \
             -e SUBTARGET="$SUBTARGET" \
-            -e PROFILE="$PROFILE" \
+            -e PROFILE="PROFILE=\"$DEVICE\"" \
             -e ROM_SIZE="${{ github.event.inputs.rom_size }}" \
             immortalwrt/imagebuilder:${IMAGE}-openwrt-${{ github.event.inputs.version }} \
             /bin/bash /home/build/custom/build24.sh
@@ -82,18 +100,19 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Firmware-${{ github.event.inputs.target }}-${{ github.event.inputs.version }}
+          name: Firmware-${{ github.event.inputs.target_arch }}-${{ github.event.inputs.version }}
           path: output/*
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.version }}-${{ github.run_id }}
-          name: ImmortalWrt ${{ github.event.inputs.version }} - ${{ github.event.inputs.target }}
+          tag_name: ${{ github.event.inputs.version }}-${{ github.event.inputs.target_arch }}-${{ github.run_id }}
+          name: ImmortalWrt ${{ github.event.inputs.version }} - ${{ github.event.inputs.target_arch }}
           body: |
             ## 构建信息
             - 版本: ${{ github.event.inputs.version }}
-            - 设备: ${{ github.event.inputs.target }}
+            - 架构: ${{ github.event.inputs.target_arch }}
+            - 可用设备: ${{ needs.discover.outputs.profiles }}
             - 固件大小: ${{ github.event.inputs.rom_size }} MB
             - 构建编号: ${{ github.run_id }}
           files: output/*
