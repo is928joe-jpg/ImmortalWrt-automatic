@@ -20,6 +20,10 @@ case "$TARGET_ARCH" in
         PROFILE='PROFILE="friendlyarm_nanopi-r4s"'
         ;;
     "mediatek-filogic")
+        echo "🍞 查询可用 profiles..."
+        make info 2>/dev/null | grep -iE "xiaomi|redmi|ax6000|ax3000|filogic"
+        echo "🍞 所有 profiles:"
+        make info 2>/dev/null | tail -20
         PROFILE='PROFILE="xiaomi_ax6000"'
         ;;
     *)
