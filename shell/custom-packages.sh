@@ -1,2 +1,2 @@
 # 自动集成插件列表
-CUSTOM_PACKAGES="luci-app-firewall luci-i18n-firewall-zh-cn luci-app-argon-config luci-i18n-argon-config-zh-cn luci-app-opkg luci-i18n-package-manager-zh-cn luci-i18n-ttyd-zh-cn luci-i18n-vlmcsd-zh-cn openssh-sftp-server curl bash uci kmod-tun ip-full ca-bundle jq 7z zram-swap"
+CUSTOM_PACKAGES="luci-app-firewall luci-i18n-firewall-zh-cn luci-app-argon-config luci-i18n-argon-config-zh-cn luci-app-opkg luci-i18n-package-manager-zh-cn luci-i18n-ttyd-zh-cn luci-i18n-vlmcsd-zh-cn luci-i18n-diskman luci-i18n-diskman-zh-cn openssh-sftp-server curl bash uci kmod-tun ip-full ca-bundle jq 7z zram-swap"

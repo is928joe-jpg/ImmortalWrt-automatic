@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# 1. 批量配置 UCI (节省调用开销)
+# 1. 批量配置 UCI 网络与 DHCP
 uci batch << EOF
 set network.lan.ipaddr='192.168.1.1'
 set network.lan.netmask='255.255.255.0'
@@ -19,16 +19,19 @@ commit network
 commit dhcp
 EOF
 
-# 2. 优化 sysctl 设置
-sed -i '/vm.vfs_cache_pressure\|vm.min_free_kbytes/d' /etc/sysctl.conf
-printf "vm.vfs_cache_pressure = 200\nvm.min_free_kbytes = 8192\n" >> /etc/sysctl.conf
-sysctl -p >/dev/null 2>&1
+# 2. 写入 sysctl 内核优化参数
+SYSCTL_CONF="/etc/sysctl.conf"
+sed -i '/vm.vfs_cache_pressure/d' $SYSCTL_CONF
+sed -i '/vm.min_free_kbytes/d' $SYSCTL_CONF
 
-# 3. ZRAM 处理 (合并逻辑)
+cat << 'PARAM' >> $SYSCTL_CONF
+vm.vfs_cache_pressure = 200
+vm.min_free_kbytes = 8192
+PARAM
+
+# 3. 设为开机自启（固件已内置 zram-swap）
 if [ -f "/etc/init.d/zram" ]; then
-    /etc/init.d/zram enable && /etc/init.d/zram restart
-    echo "ZRAM 已启动，状态如下："
-    /etc/init.d/zram status | grep -E "Device size|Original data size|Memory used"
-else
-    echo "警告：未找到 ZRAM 服务。"
+    /etc/init.d/zram enable
 fi
+
+exit 0
