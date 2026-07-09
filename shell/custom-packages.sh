@@ -18,4 +18,9 @@ ca-bundle \
 jq \
 7z \
 zram-swap \
-dnsmasq-full"
+dnsmasq-full \
+autocore \
+automount \
+block-mount \
+luci-app-vlmcsd \
+luci-app-ttyd"
